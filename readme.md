@@ -2,7 +2,32 @@
 
 Sistema desenvolvido para o **Projeto ELLP – Ensino Lúdico de Lógica e Programação**, com o objetivo de registrar e monitorar a presença de alunos em oficinas educacionais voltadas para jovens em situação de vulnerabilidade social.
 
+## 🏗️ Diagrama de Arquitetura
+O sistema segue uma arquitetura baseada em camadas, integrando o frontend em React.js, backend com Node.js e Express, e serviços do Firebase para autenticação e banco de dados.
+
+Componentes:
+
+    Usuário (Admin/Monitor): Acessa via navegador.
+
+    Frontend (React.js): Interface de usuário com funcionalidades como cadastro, visualização e registro de presença.
+
+    Backend (Node.js + Express): API responsável por regras de negócio, autenticação e geração de relatórios.
+
+    Firebase:
+
+        Auth (Email/Senha): Gerencia login dos usuários.
+
+        Realtime Database: Armazena dados de alunos, oficinas e presenças.
+    ![Diagrama de Arquitetura](./Docs/DiagramaArquitetura.jpeg)
+
 ## ✨ Funcionalidades
+- **RelatorioCSV:** Geração de relatórios de presença e histórico.
+- **AutenticacaoService:** Realiza login e logout de usuários.
+
+![Diagrama de Classes](./Docs/DiagramadeClasses.jpeg)
+
+## 🖥️ Tecnologias Utilizadas
+
 
 - ✅ Cadastrar aluno
 - ✅ Cadastrar oficina
@@ -27,13 +52,6 @@ O sistema é estruturado em torno das seguintes entidades principais:
 - **Aluno:** Representa os participantes das oficinas.
 - **Oficina:** Evento educacional com título, descrição e data.
 - **Presenca:** Relaciona alunos e oficinas, com registro de data.
-- **RelatorioCSV:** Geração de relatórios de presença e histórico.
-- **AutenticacaoService:** Realiza login e logout de usuários.
-
-![Diagrama de Classes](./Docs/DiagramadeClasses.jpeg)
-
-## 🖥️ Tecnologias Utilizadas
-
 - **Frontend:** React.js
 - **Backend:** Node.js com Express
 - **Banco de Dados & Autenticação:** Firebase
@@ -48,6 +66,7 @@ O sistema é estruturado em torno das seguintes entidades principais:
     cd Frontend
     npm install
     cd ../Backend
+    npm install
 O sistema é estruturado em torno das seguintes entidades principais:
 
 - **Usuario:** Responsável por acessar o sistema.
@@ -63,7 +82,7 @@ O sistema é estruturado em torno das seguintes entidades principais:
 
 - **Frontend:** React.js
 - **Backend:** Node.js com Express
-    npm install
+
     
 3.  Configure o Firebase:
     Crie um projeto no Firebase.
@@ -72,13 +91,14 @@ O sistema é estruturado em torno das seguintes entidades principais:
 
 4.  Inicie os servidores:
 
-    Backend:
+    Backend:        
         npm run dev
     
     Frontend:
-        cd ../frontend
+        cd ../Frontend
         npm start
-📁 Estrutura do Projeto
+
+## 📁 Estrutura do Projeto
 
 sistema_presença_ellp/
 ├── Frontend/               # React.js
@@ -86,11 +106,13 @@ sistema_presença_ellp/
 ├── Docs/                   # Diagramas
 │   ├── DiagramadeClasses.jpeg
 │   └── DiagramaCasosUso.jpeg
+│   └── DiagramaArquitetura.jpeg
 └── README.md
-🛡️ Licença
+
+## 🛡️ Licença
 Este projeto está licenciado sob a MIT License.
 
-👥 Desenvolvedores
+## 👥 Desenvolvedores
 Rythielly Garcia Bezerra
 
 Gustavo Betiati
