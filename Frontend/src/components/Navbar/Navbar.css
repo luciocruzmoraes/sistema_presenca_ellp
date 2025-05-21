@@ -1,0 +1,121 @@
+.navbar {
+  background-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-5);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.navbar-logo h1 {
+  color: white;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.navbar-menu {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-menu li {
+  margin-left: var(--space-4);
+}
+
+.navbar-menu a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  transition: color var(--transition-speed) ease;
+}
+
+.navbar-menu a:hover {
+  color: white;
+}
+
+.navbar-menu a.active {
+  color: white;
+  font-weight: 600;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 21px;
+  cursor: pointer;
+}
+
+.bar {
+  display: block;
+  height: 3px;
+  width: 100%;
+  background-color: white;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    padding: var(--space-3);
+  }
+  
+  .mobile-menu-toggle {
+    display: flex;
+  }
+  
+  .navbar-menu {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    background-color: var(--primary-dark);
+    flex-direction: column;
+    align-items: center;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .navbar-menu.open {
+    max-height: 500px;
+    box-shadow: var(--shadow-md);
+  }
+  
+  .navbar-menu li {
+    margin: 0;
+    width: 100%;
+  }
+  
+  .navbar-menu a {
+    padding: var(--space-3);
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .bar.open:nth-child(1) {
+    transform: translateY(9px) rotate(45deg);
+  }
+  
+  .bar.open:nth-child(2) {
+    opacity: 0;
+  }
+  
+  .bar.open:nth-child(3) {
+    transform: translateY(-9px) rotate(-45deg);
+  }
+}
