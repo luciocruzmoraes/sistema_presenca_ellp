@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middlewares/authMiddleware');
+const authMiddleware = require('../middlewares/authMiddlewares');
 
 const alunosController = require('../controllers/AlunosController');
 const presencaController = require('../controllers/PresencaController');
@@ -16,5 +16,8 @@ router.get('/presencas/aluno/:alunoId', authMiddleware, presencaController.getPr
 router.get('/presencas/data/:data', authMiddleware, presencaController.getPresencasPorData);
 router.put('/presencas/:id', authMiddleware, presencaController.updatePresenca);
 router.delete('/presencas/:id', authMiddleware, presencaController.deletePresenca);
+
+router.post('/users', authMiddleware, userController.createUserData);
+router.get('/users/:uid', authMiddleware, userController.getUserData);
 
 module.exports = router;

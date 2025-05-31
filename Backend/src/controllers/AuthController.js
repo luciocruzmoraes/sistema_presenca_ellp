@@ -1,26 +1,18 @@
-const admin = require('../firebase'); 
-const jwt = require('jsonwebtoken');
+const authService = require('../services/AuthService');
 
 const login = async (req, res) => {
   const { idToken } = req.body;
 
-  if (!idToken) {
-    return res.status(400).json({ error: 'Token do Firebase não enviado' });
-  }
-
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const { uid, email } = decodedToken;
-
-    const jwtToken = jwt.sign(
-      { uid, email },
-      process.env.JWT_SECRET, 
-      { expiresIn: '7d' }
-    );
-
-    res.status(200).json({ token: jwtToken });
+    const token = await authService.login(idToken);
+    res.status(200).json({ token });
   } catch (error) {
-    console.error('Erro ao verificar token do Firebase:', error);
+    console.error('Erro no login:', error.message);
+    
+    if (error.message === 'Token do Firebase não enviado') {
+      return res.status(400).json({ error: error.message });
+    }
+
     res.status(401).json({ error: 'Token inválido' });
   }
 };

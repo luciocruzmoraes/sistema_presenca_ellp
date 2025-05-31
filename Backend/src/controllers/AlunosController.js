@@ -1,7 +1,4 @@
-const admin = require('../firebase');
-const db = admin.firestore();
-
-const alunosCollection = db.collection('alunos');
+const alunoService = require('../services/AlunoService');
 
 const createAluno = async (req, res) => {
   try {
@@ -11,12 +8,8 @@ const createAluno = async (req, res) => {
       return res.status(400).json({ error: 'Campos nome, email e turma são obrigatórios' });
     }
 
-    const novoAluno = { nome, email, turma };
-
-    const docRef = await alunosCollection.add(novoAluno);
-    const alunoCriado = await docRef.get();
-
-    res.status(201).json({ id: docRef.id, ...alunoCriado.data() });
+    const aluno = await alunoService.createAluno({ nome, email, turma });
+    res.status(201).json(aluno);
   } catch (error) {
     console.error('Erro ao criar aluno:', error);
     res.status(500).json({ error: 'Erro ao criar aluno' });
@@ -25,9 +18,7 @@ const createAluno = async (req, res) => {
 
 const getAlunos = async (req, res) => {
   try {
-    const snapshot = await alunosCollection.get();
-    const alunos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
+    const alunos = await alunoService.getAlunos();
     res.status(200).json(alunos);
   } catch (error) {
     console.error('Erro ao buscar alunos:', error);
@@ -38,13 +29,13 @@ const getAlunos = async (req, res) => {
 const getAlunoById = async (req, res) => {
   try {
     const { id } = req.params;
-    const doc = await alunosCollection.doc(id).get();
+    const aluno = await alunoService.getAlunoById(id);
 
-    if (!doc.exists) {
+    if (!aluno) {
       return res.status(404).json({ error: 'Aluno não encontrado' });
     }
 
-    res.status(200).json({ id: doc.id, ...doc.data() });
+    res.status(200).json(aluno);
   } catch (error) {
     console.error('Erro ao buscar aluno:', error);
     res.status(500).json({ error: 'Erro ao buscar aluno' });
@@ -56,18 +47,13 @@ const updateAluno = async (req, res) => {
     const { id } = req.params;
     const { nome, email, turma } = req.body;
 
-    const alunoRef = alunosCollection.doc(id);
-    const doc = await alunoRef.get();
+    const alunoAtualizado = await alunoService.updateAluno(id, { nome, email, turma });
 
-    if (!doc.exists) {
+    if (!alunoAtualizado) {
       return res.status(404).json({ error: 'Aluno não encontrado' });
     }
 
-    await alunoRef.update({ nome, email, turma });
-
-    const alunoAtualizado = await alunoRef.get();
-
-    res.status(200).json({ id: alunoAtualizado.id, ...alunoAtualizado.data() });
+    res.status(200).json(alunoAtualizado);
   } catch (error) {
     console.error('Erro ao atualizar aluno:', error);
     res.status(500).json({ error: 'Erro ao atualizar aluno' });
@@ -77,14 +63,12 @@ const updateAluno = async (req, res) => {
 const deleteAluno = async (req, res) => {
   try {
     const { id } = req.params;
-    const alunoRef = alunosCollection.doc(id);
-    const doc = await alunoRef.get();
+    const sucesso = await alunoService.deleteAluno(id);
 
-    if (!doc.exists) {
+    if (!sucesso) {
       return res.status(404).json({ error: 'Aluno não encontrado' });
     }
 
-    await alunoRef.delete();
     res.status(200).json({ message: 'Aluno deletado com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar aluno:', error);
