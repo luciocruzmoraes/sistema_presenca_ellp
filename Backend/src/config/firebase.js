@@ -1,9 +1,9 @@
-const admin = require('firebase-admin');
-const serviceAccount = require('./firebaseServiceAccountKey.json'); //verificar com lucio esse arquivo
+const admin = require("firebase-admin");
+const serviceAccount = require("../firebaseServiceAccountKey.json"); 
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://gerennciador-presenca.firebaseio.com' 
+  credential: admin.credential.cert(serviceAccount)
 });
 
-module.exports = admin;
+const db = admin.firestore();
+module.exports = db;

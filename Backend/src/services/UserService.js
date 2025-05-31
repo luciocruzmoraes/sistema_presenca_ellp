@@ -1,22 +1,16 @@
-const admin = require('../config/firebase');
-const db = admin.firestore();
+const db = require('../config/firebase');
+const collection = db.collection('usuarios');
 
 const createUserData = async ({ uid, nome, role }) => {
-  if (!uid || !nome || !role) {
-    throw new Error('Campos uid, nome e role são obrigatórios');
-  }
-
-  await db.collection('usuarios').doc(uid).set({ nome, role });
+  await collection.doc(uid).set({ nome, role });
 };
 
 const getUserData = async (uid) => {
-  const doc = await db.collection('usuarios').doc(uid).get();
-
+  const doc = await collection.doc(uid).get();
   if (!doc.exists) {
     throw new Error('Usuário não encontrado');
   }
-
-  return doc.data();
+  return { uid: doc.id, ...doc.data() };
 };
 
 module.exports = {
