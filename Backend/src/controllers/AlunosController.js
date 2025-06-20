@@ -1,14 +1,15 @@
 const alunoService = require('../services/AlunoService');
 
+
 const createAluno = async (req, res) => {
   try {
-    const { nome, email, turma } = req.body;
+    const { nome, email, telefone, turma, oficinas = [] } = req.body;
 
     if (!nome || !email || !turma) {
       return res.status(400).json({ error: 'Campos nome, email e turma são obrigatórios' });
     }
 
-    const aluno = await alunoService.createAluno({ nome, email, turma });
+    const aluno = await alunoService.createAluno({ nome, email, telefone, turma, oficinas });
     res.status(201).json(aluno);
   } catch (error) {
     console.error('Erro ao criar aluno:', error);
@@ -45,9 +46,9 @@ const getAlunoById = async (req, res) => {
 const updateAluno = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, email, turma } = req.body;
+    const { nome, email, telefone, turma, oficinas = [] } = req.body;
 
-    const alunoAtualizado = await alunoService.updateAluno(id, { nome, email, turma });
+    const alunoAtualizado = await alunoService.updateAluno(id, { nome, email, telefone, turma, oficinas });
 
     if (!alunoAtualizado) {
       return res.status(404).json({ error: 'Aluno não encontrado' });

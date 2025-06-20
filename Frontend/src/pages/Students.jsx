@@ -7,17 +7,20 @@ import { FaSearch, FaPlus, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 // OBS: A página Oficinas.jsx foi criada seguindo o padrão desta página para adicionar, editar, buscar e deletar oficinas.
 
 const API_URL = 'http://localhost:3000/api/alunos'; 
+const API_OFICINAS_URL = 'http://localhost:3000/api/oficinas';
 
 const Students = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState({ nome: '', email: '', telefone: '', observacoes: '', turma: '' });
+  const [currentStudent, setCurrentStudent] = useState({ nome: '', email: '', telefone: '', observacoes: '', turma: '', oficinas: [] });
   const [isEditing, setIsEditing] = useState(false);
+  const [oficinas, setOficinas] = useState([]);
 
   useEffect(() => {
     fetchStudents();
+    fetchOficinas();
   }, []);
 
   const fetchStudents = async () => {
@@ -30,6 +33,16 @@ const Students = () => {
       toast.error('Erro ao buscar alunos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOficinas = async () => {
+    try {
+      const response = await axios.get(API_OFICINAS_URL);
+      setOficinas(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar oficinas:', error);
+      toast.error('Erro ao buscar oficinas');
     }
   };
 
@@ -46,20 +59,25 @@ const Students = () => {
   };
 
   const openAddModal = () => {
-    setCurrentStudent({ nome: '', email: '', telefone: '', observacoes: '', turma: '' });
+    setCurrentStudent({ nome: '', email: '', telefone: '', observacoes: '', turma: '', oficinas: [] });
     setIsEditing(false);
     setModalOpen(true);
   };
 
   const openEditModal = (student) => {
-    setCurrentStudent({ ...student });
+    setCurrentStudent({ ...student, oficinas: student.oficinas || [] });
     setIsEditing(true);
     setModalOpen(true);
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentStudent({ ...currentStudent, [name]: value });
+    const { name, value, type, options } = e.target;
+    if (name === 'oficinas') {
+      const selected = Array.from(options).filter(option => option.selected).map(option => option.value);
+      setCurrentStudent({ ...currentStudent, oficinas: selected });
+    } else {
+      setCurrentStudent({ ...currentStudent, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -77,6 +95,7 @@ const Students = () => {
           telefone: currentStudent.telefone,
           observacoes: currentStudent.observacoes,
           turma: currentStudent.turma,
+          oficinas: currentStudent.oficinas,
         });
         toast.success('Aluno atualizado com sucesso');
       } else {
@@ -86,6 +105,7 @@ const Students = () => {
           telefone: currentStudent.telefone,
           observacoes: currentStudent.observacoes,
           turma: currentStudent.turma,
+          oficinas: currentStudent.oficinas,
         });
         toast.success('Aluno adicionado com sucesso');
       }
@@ -144,7 +164,7 @@ const Students = () => {
                 <th>Nome</th>
                 <th>Email</th>
                 <th>Turma</th>
-                <th>Telefone</th>
+                <th>Oficinas</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -154,7 +174,10 @@ const Students = () => {
                   <td>{student.nome}</td>
                   <td>{student.email}</td>
                   <td>{student.turma}</td>
-                  <td>{student.telefone}</td>
+                  <td>{student.oficinas.map((oficinaId) => {
+                    const oficina = oficinas.find((o) => o.id === oficinaId);
+                    return oficina ? oficina.nome : oficinaId;
+                  }).join(', ')}</td>
                   <td className="actions-cell">
                     <button className="btn-icon edit" onClick={() => openEditModal(student)}>
                       <FaEdit />
@@ -229,6 +252,23 @@ const Students = () => {
               onChange={handleInputChange}
               required
             />
+          </div>
+          <div className="form-group">
+            <label htmlFor="oficinas">Oficinas</label>
+            <select
+              id="oficinas"
+              name="oficinas"
+              multiple
+              value={currentStudent.oficinas}
+              onChange={handleInputChange}
+            >
+              {oficinas.map((oficina) => (
+                <option key={oficina.id} value={oficina.id}>
+                  {oficina.nome}
+                </option>
+              ))}
+            </select>
+            <small>Segure Ctrl (Windows) ou Command (Mac) para selecionar várias</small>
           </div>
           <div className="modal-actions">
             <button type="button" className="secondary" onClick={() => setModalOpen(false)}>
