@@ -1,51 +1,52 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 import Modal from '../components/Modal/Modal';
 import { FaSearch, FaPlus, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 
-// Dados mockados
-const MOCK_STUDENTS = [
-  { id: '1', name: 'Ana Souza', email: 'ana@email.com', phone: '11999999999', notes: 'Aluna assídua' },
-  { id: '2', name: 'Carlos Lima', email: 'carlos@email.com', phone: '21988888888', notes: '' },
-  { id: '3', name: 'Fernanda Dias', email: 'fernanda@email.com', phone: '31977777777', notes: 'Precisa de reforço' },
-];
+// OBS: A página Oficinas.jsx foi criada seguindo o padrão desta página para adicionar, editar, buscar e deletar oficinas.
 
-const MOCK_HISTORY = [
-  { id: 'a1', date: '2024-05-10', workshopName: 'Lógica de Programação' },
-  { id: 'a2', date: '2024-05-17', workshopName: 'Python Básico' },
-];
+const API_URL = 'http://localhost:3000/api/alunos'; 
 
 const Students = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState({ name: '', email: '', phone: '', notes: '' });
-  const [studentHistory, setStudentHistory] = useState([]);
+  const [currentStudent, setCurrentStudent] = useState({ nome: '', email: '', telefone: '', observacoes: '', turma: '' });
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => {
-      setStudents(MOCK_STUDENTS);
-      setLoading(false);
-    }, 500);
+    fetchStudents();
   }, []);
 
-  const handleSearch = () => {
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(API_URL);
+      setStudents(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar alunos:', error);
+      toast.error('Erro ao buscar alunos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
     if (searchTerm.trim() === '') {
-      setStudents(MOCK_STUDENTS);
+      fetchStudents();
       return;
     }
 
-    const filtered = MOCK_STUDENTS.filter(student =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = students.filter((student) =>
+      student.nome.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setStudents(filtered);
   };
 
   const openAddModal = () => {
-    setCurrentStudent({ name: '', email: '', phone: '', notes: '' });
+    setCurrentStudent({ nome: '', email: '', telefone: '', observacoes: '', turma: '' });
     setIsEditing(false);
     setModalOpen(true);
   };
@@ -61,37 +62,52 @@ const Students = () => {
     setCurrentStudent({ ...currentStudent, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentStudent.name.trim()) {
+    if (!currentStudent.nome.trim()) {
       toast.error('O nome do aluno é obrigatório');
       return;
     }
 
-    if (isEditing) {
-      toast.success('Mock: aluno atualizado');
-    } else {
-      toast.success('Mock: aluno adicionado');
+    try {
+      if (isEditing) {
+        await axios.put(`${API_URL}/${currentStudent.id}`, {
+          nome: currentStudent.nome,
+          email: currentStudent.email,
+          telefone: currentStudent.telefone,
+          observacoes: currentStudent.observacoes,
+          turma: currentStudent.turma,
+        });
+        toast.success('Aluno atualizado com sucesso');
+      } else {
+        await axios.post(API_URL, {
+          nome: currentStudent.nome,
+          email: currentStudent.email,
+          telefone: currentStudent.telefone,
+          observacoes: currentStudent.observacoes,
+          turma: currentStudent.turma,
+        });
+        toast.success('Aluno adicionado com sucesso');
+      }
+      setModalOpen(false);
+      fetchStudents();
+    } catch (error) {
+      console.error('Erro ao salvar aluno:', error);
+      toast.error('Erro ao salvar aluno');
     }
-
-    setModalOpen(false);
-    setStudents(MOCK_STUDENTS); // não altera de fato, só simula
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir este aluno?')) {
-      toast.success('Mock: aluno excluído');
+      try {
+        await axios.delete(`${API_URL}/${id}`);
+        toast.success('Aluno excluído com sucesso');
+        fetchStudents();
+      } catch (error) {
+        console.error('Erro ao excluir aluno:', error);
+        toast.error('Erro ao excluir aluno');
+      }
     }
-  };
-
-  const viewStudentHistory = (id, name) => {
-    setCurrentStudent({ ...currentStudent, id, name });
-    setStudentHistory(MOCK_HISTORY);
-    setHistoryModalOpen(true);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   if (loading) {
@@ -101,7 +117,7 @@ const Students = () => {
   return (
     <div className="students-container">
       <div className="page-header">
-        <h1>Alunos (Mock)</h1>
+        <h1>Alunos</h1>
         <button onClick={openAddModal} className="success">
           <FaPlus /> Novo Aluno
         </button>
@@ -127,6 +143,7 @@ const Students = () => {
               <tr>
                 <th>Nome</th>
                 <th>Email</th>
+                <th>Turma</th>
                 <th>Telefone</th>
                 <th>Ações</th>
               </tr>
@@ -134,13 +151,11 @@ const Students = () => {
             <tbody>
               {students.map((student) => (
                 <tr key={student.id}>
-                  <td>{student.name}</td>
+                  <td>{student.nome}</td>
                   <td>{student.email}</td>
-                  <td>{student.phone}</td>
+                  <td>{student.turma}</td>
+                  <td>{student.telefone}</td>
                   <td className="actions-cell">
-                    <button className="btn-icon view" onClick={() => viewStudentHistory(student.id, student.name)}>
-                      <FaEye />
-                    </button>
                     <button className="btn-icon edit" onClick={() => openEditModal(student)}>
                       <FaEdit />
                     </button>
@@ -160,16 +175,16 @@ const Students = () => {
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={isEditing ? 'Editar Aluno (Mock)' : 'Adicionar Aluno (Mock)'}
+        title={isEditing ? 'Editar Aluno' : 'Adicionar Aluno'}
       >
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Nome*</label>
+            <label htmlFor="nome">Nome*</label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={currentStudent.name}
+              id="nome"
+              name="nome"
+              value={currentStudent.nome}
               onChange={handleInputChange}
               required
             />
@@ -185,24 +200,35 @@ const Students = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="phone">Telefone</label>
+            <label htmlFor="telefone">Telefone</label>
             <input
               type="tel"
-              id="phone"
-              name="phone"
-              value={currentStudent.phone}
+              id="telefone"
+              name="telefone"
+              value={currentStudent.telefone}
               onChange={handleInputChange}
             />
           </div>
           <div className="form-group">
-            <label htmlFor="notes">Observações</label>
+            <label htmlFor="observacoes">Observações</label>
             <textarea
-              id="notes"
-              name="notes"
-              value={currentStudent.notes}
+              id="observacoes"
+              name="observacoes"
+              value={currentStudent.observacoes}
               onChange={handleInputChange}
               rows="3"
             ></textarea>
+          </div>
+          <div className="form-group">
+            <label htmlFor="turma">Turma*</label>
+            <input
+              type="text"
+              id="turma"
+              name="turma"
+              value={currentStudent.turma}
+              onChange={handleInputChange}
+              required
+            />
           </div>
           <div className="modal-actions">
             <button type="button" className="secondary" onClick={() => setModalOpen(false)}>
@@ -213,38 +239,6 @@ const Students = () => {
             </button>
           </div>
         </form>
-      </Modal>
-
-      <Modal
-        isOpen={historyModalOpen}
-        onClose={() => setHistoryModalOpen(false)}
-        title={`Histórico de ${currentStudent.name} (Mock)`}
-      >
-        {studentHistory.length > 0 ? (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Oficina</th>
-                </tr>
-              </thead>
-              <tbody>
-                {studentHistory.map((record) => (
-                  <tr key={record.id}>
-                    <td>{formatDate(record.date)}</td>
-                    <td>{record.workshopName}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p>Nenhuma presença registrada para este aluno.</p>
-        )}
-        <div className="modal-actions">
-          <button onClick={() => setHistoryModalOpen(false)}>Fechar</button>
-        </div>
       </Modal>
     </div>
   );
