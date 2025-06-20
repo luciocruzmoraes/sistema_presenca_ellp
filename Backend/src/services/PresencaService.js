@@ -1,12 +1,12 @@
 const db = require('../config/firebase');
 const presencasCollection = db.collection('presencas');
 
-const registrarPresenca = async ({ alunoId, data, presente, turma }) => {
-  if (!alunoId || !data || typeof presente !== 'boolean' || !turma) {
-    throw new Error('Campos alunoId, data, presente (booleano) e turma são obrigatórios');
+const registrarPresenca = async ({ alunoId, data, presente, turma, oficinaId }) => {
+  if (!alunoId || !data || typeof presente !== 'boolean' || !turma || !oficinaId) {
+    throw new Error('Campos alunoId, data, presente (booleano), turma e oficinaId são obrigatórios');
   }
 
-  const novaPresenca = { alunoId, data, presente, turma };
+  const novaPresenca = { alunoId, data, presente, turma, oficinaId };
   const docRef = await presencasCollection.add(novaPresenca);
   return { id: docRef.id, ...novaPresenca };
 };
@@ -21,13 +21,13 @@ const getPresencasPorData = async (data) => {
   return snapshot.empty ? [] : snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-const updatePresenca = async (id, { alunoId, data, presente, turma }) => {
+const updatePresenca = async (id, { alunoId, data, presente, turma, oficinaId }) => {
   const presencaRef = presencasCollection.doc(id);
   const doc = await presencaRef.get();
 
   if (!doc.exists) throw new Error('Presença não encontrada');
 
-  await presencaRef.update({ alunoId, data, presente, turma });
+  await presencaRef.update({ alunoId, data, presente, turma, oficinaId });
   const atualizado = await presencaRef.get();
   return { id: atualizado.id, ...atualizado.data() };
 };
@@ -40,10 +40,16 @@ const deletePresenca = async (id) => {
   await presencaRef.delete();
 };
 
+const getAllPresencas = async () => {
+  const snapshot = await presencasCollection.get();
+  return snapshot.empty ? [] : snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
 module.exports = {
   registrarPresenca,
   getPresencasPorAluno,
   getPresencasPorData,
   updatePresenca,
   deletePresenca,
+  getAllPresencas,
 };

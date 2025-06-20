@@ -17,6 +17,7 @@ router.get('/presencas/aluno/:alunoId', presencaController.getPresencasPorAluno)
 router.get('/presencas/data/:data', presencaController.getPresencasPorData);
 router.put('/presencas/:id', presencaController.updatePresenca);
 router.delete('/presencas/:id', presencaController.deletePresenca);
+router.get('/presencas', presencaController.getAllPresencas);
 
 router.post('/users', userController.createUserData);
 router.get('/users/:uid', userController.getUserData);

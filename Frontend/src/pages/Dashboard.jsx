@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import { FaUserGraduate, FaChalkboardTeacher, FaCalendarCheck } from 'react-icons/fa';
+import axios from 'axios';
+
+const API_ALUNOS_URL = 'http://localhost:3000/api/alunos';
+const API_OFICINAS_URL = 'http://localhost:3000/api/oficinas';
+const API_PRESENCAS_URL = 'http://localhost:3000/api/presencas';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -11,50 +16,45 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const mockStudents = Array(10).fill({}); 
-    const mockWorkshops = Array(3).fill({}); 
-    const mockAttendanceRecords = [
-      {
-        id: '1',
-        date: '2025-05-20',
-        studentName: 'João Silva',
-        workshopName: 'Lógica de Programação',
-      },
-      {
-        id: '2',
-        date: '2025-05-19',
-        studentName: 'Maria Oliveira',
-        workshopName: 'Robótica Educacional',
-      },
-      {
-        id: '3',
-        date: '2025-05-18',
-        studentName: 'Carlos Souza',
-        workshopName: 'Jogos Matemáticos',
-      },
-      {
-        id: '4',
-        date: '2025-05-17',
-        studentName: 'Ana Costa',
-        workshopName: 'Pensamento Computacional',
-      },
-      {
-        id: '5',
-        date: '2025-05-16',
-        studentName: 'Pedro Lima',
-        workshopName: 'Algoritmos com Scratch',
-      },
-    ];
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [alunosRes, oficinasRes, presencasRes] = await Promise.all([
+          axios.get(API_ALUNOS_URL),
+          axios.get(API_OFICINAS_URL),
+          axios.get(API_PRESENCAS_URL)
+        ]);
+        const alunos = alunosRes.data;
+        const oficinas = oficinasRes.data;
+        const presencas = presencasRes.data;
 
-    setTimeout(() => {
-      setStats({
-        students: mockStudents.length,
-        workshops: mockWorkshops.length,
-        attendanceRecords: mockAttendanceRecords.length,
-        recentAttendance: mockAttendanceRecords,
-      });
-      setLoading(false);
-    }, 1000);
+        // Ordenar presenças por data decrescente
+        const sortedPresencas = [...presencas].sort((a, b) => new Date(b.data) - new Date(a.data));
+        // Pegar as 5 mais recentes
+        const recentAttendance = sortedPresencas.slice(0, 5).map((p) => {
+          const aluno = alunos.find(a => a.id === p.alunoId);
+          const oficina = oficinas.find(o => o.id === p.oficinaId);
+          return {
+            id: p.id,
+            date: p.data,
+            studentName: aluno ? aluno.nome : p.alunoId,
+            workshopName: oficina ? oficina.nome : (p.oficinaId || '-'),
+          };
+        });
+
+        setStats({
+          students: alunos.length,
+          workshops: oficinas.length,
+          attendanceRecords: presencas.length,
+          recentAttendance
+        });
+      } catch (error) {
+        setStats({ students: 0, workshops: 0, attendanceRecords: 0, recentAttendance: [] });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   if (loading) {

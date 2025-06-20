@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import Modal from '../components/Modal/Modal';
-import { FaSearch, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 
 const API_URL = 'http://localhost:3000/api/oficinas';
+const API_ALUNOS_URL = 'http://localhost:3000/api/alunos';
 
 const Oficinas = () => {
   const [oficinas, setOficinas] = useState([]);
@@ -13,9 +14,14 @@ const Oficinas = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [currentOficina, setCurrentOficina] = useState({ nome: '', descricao: '', data: '', local: '' });
   const [isEditing, setIsEditing] = useState(false);
+  const [alunos, setAlunos] = useState([]);
+  const [alunosModalOpen, setAlunosModalOpen] = useState(false);
+  const [alunosOficina, setAlunosOficina] = useState([]);
+  const [oficinaSelecionada, setOficinaSelecionada] = useState(null);
 
   useEffect(() => {
     fetchOficinas();
+    fetchAlunos();
   }, []);
 
   const fetchOficinas = async () => {
@@ -28,6 +34,16 @@ const Oficinas = () => {
       toast.error('Erro ao buscar oficinas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAlunos = async () => {
+    try {
+      const response = await axios.get(API_ALUNOS_URL);
+      setAlunos(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar alunos:', error);
+      toast.error('Erro ao buscar alunos');
     }
   };
 
@@ -94,6 +110,13 @@ const Oficinas = () => {
     }
   };
 
+  const openAlunosModal = (oficina) => {
+    setOficinaSelecionada(oficina);
+    const alunosDaOficina = alunos.filter(aluno => (aluno.oficinas || []).includes(oficina.id));
+    setAlunosOficina(alunosDaOficina);
+    setAlunosModalOpen(true);
+  };
+
   if (loading) {
     return <div className="loading">Carregando...</div>;
   }
@@ -138,6 +161,9 @@ const Oficinas = () => {
                   <td>{oficina.data}</td>
                   <td>{oficina.local}</td>
                   <td className="actions-cell">
+                    <button className="btn-icon" title="Ver Alunos" onClick={() => openAlunosModal(oficina)}>
+                      <FaEye />
+                    </button>
                     <button className="btn-icon edit" onClick={() => openEditModal(oficina)}>
                       <FaEdit />
                     </button>
@@ -212,6 +238,36 @@ const Oficinas = () => {
             </button>
           </div>
         </form>
+      </Modal>
+      <Modal
+        isOpen={alunosModalOpen}
+        onClose={() => setAlunosModalOpen(false)}
+        title={oficinaSelecionada ? `Alunos da Oficina: ${oficinaSelecionada.nome}` : 'Alunos da Oficina'}
+      >
+        {alunosOficina.length > 0 ? (
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Email</th>
+                  <th>Turma</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alunosOficina.map(aluno => (
+                  <tr key={aluno.id}>
+                    <td>{aluno.nome}</td>
+                    <td>{aluno.email}</td>
+                    <td>{aluno.turma}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>Nenhum aluno cadastrado nesta oficina.</p>
+        )}
       </Modal>
     </div>
   );

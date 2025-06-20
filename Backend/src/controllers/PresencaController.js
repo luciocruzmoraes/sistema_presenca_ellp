@@ -66,10 +66,21 @@ const deletePresenca = async (req, res) => {
   }
 };
 
+const getAllPresencas = async (req, res) => {
+  try {
+    const presencas = await presencaService.getAllPresencas();
+    res.status(200).json(presencas);
+  } catch (error) {
+    console.error('Erro ao buscar presenças:', error.message);
+    res.status(500).json({ error: 'Erro ao buscar presenças' });
+  }
+};
+
 module.exports = {
   registrarPresenca,
   getPresencasPorAluno,
   getPresencasPorData,
   updatePresenca,
   deletePresenca,
+  getAllPresencas,
 };
