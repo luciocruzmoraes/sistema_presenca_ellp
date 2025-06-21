@@ -12,7 +12,7 @@ const Oficinas = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentOficina, setCurrentOficina] = useState({ nome: '', descricao: '', data: '', local: '' });
+  const [currentOficina, setCurrentOficina] = useState({ nome: '', descricao: '', local: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [alunos, setAlunos] = useState([]);
   const [alunosModalOpen, setAlunosModalOpen] = useState(false);
@@ -59,7 +59,7 @@ const Oficinas = () => {
   };
 
   const openAddModal = () => {
-    setCurrentOficina({ nome: '', descricao: '', data: '', local: '' });
+    setCurrentOficina({ nome: '', descricao: '', local: '' });
     setIsEditing(false);
     setModalOpen(true);
   };
@@ -77,7 +77,7 @@ const Oficinas = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentOficina.nome.trim() || !currentOficina.descricao.trim() || !currentOficina.data.trim() || !currentOficina.local.trim()) {
+    if (!currentOficina.nome.trim() || !currentOficina.descricao.trim() || !currentOficina.local.trim()) {
       toast.error('Todos os campos são obrigatórios');
       return;
     }
@@ -148,7 +148,6 @@ const Oficinas = () => {
               <tr>
                 <th>Nome</th>
                 <th>Descrição</th>
-                <th>Data</th>
                 <th>Local</th>
                 <th>Ações</th>
               </tr>
@@ -158,7 +157,6 @@ const Oficinas = () => {
                 <tr key={oficina.id}>
                   <td>{oficina.nome}</td>
                   <td>{oficina.descricao}</td>
-                  <td>{oficina.data}</td>
                   <td>{oficina.local}</td>
                   <td className="actions-cell">
                     <button className="btn-icon" title="Ver Alunos" onClick={() => openAlunosModal(oficina)}>
@@ -206,17 +204,6 @@ const Oficinas = () => {
               required
               rows="3"
             ></textarea>
-          </div>
-          <div className="form-group">
-            <label htmlFor="data">Data*</label>
-            <input
-              type="date"
-              id="data"
-              name="data"
-              value={currentOficina.data}
-              onChange={handleInputChange}
-              required
-            />
           </div>
           <div className="form-group">
             <label htmlFor="local">Local*</label>

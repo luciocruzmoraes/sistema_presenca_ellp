@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { FaUserGraduate, FaChalkboardTeacher, FaCalendarCheck } from 'react-icons/fa';
+import { FaUserGraduate, FaChalkboardTeacher, FaCalendarCheck, FaEdit } from 'react-icons/fa';
 import axios from 'axios';
+import Modal from '../components/Modal/Modal';
 
 const API_ALUNOS_URL = 'http://localhost:3000/api/alunos';
 const API_OFICINAS_URL = 'http://localhost:3000/api/oficinas';
@@ -11,9 +12,15 @@ const Dashboard = () => {
     students: 0,
     workshops: 0,
     attendanceRecords: 0,
-    recentAttendance: []
   });
   const [loading, setLoading] = useState(true);
+  const [alunos, setAlunos] = useState([]);
+  const [oficinas, setOficinas] = useState([]);
+  const [presencas, setPresencas] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [edicao, setEdicao] = useState(null); // { oficinaId, data }
+  const [presencasOficina, setPresencasOficina] = useState({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,32 +31,16 @@ const Dashboard = () => {
           axios.get(API_OFICINAS_URL),
           axios.get(API_PRESENCAS_URL)
         ]);
-        const alunos = alunosRes.data;
-        const oficinas = oficinasRes.data;
-        const presencas = presencasRes.data;
-
-        // Ordenar presenças por data decrescente
-        const sortedPresencas = [...presencas].sort((a, b) => new Date(b.data) - new Date(a.data));
-        // Pegar as 5 mais recentes
-        const recentAttendance = sortedPresencas.slice(0, 5).map((p) => {
-          const aluno = alunos.find(a => a.id === p.alunoId);
-          const oficina = oficinas.find(o => o.id === p.oficinaId);
-          return {
-            id: p.id,
-            date: p.data,
-            studentName: aluno ? aluno.nome : p.alunoId,
-            workshopName: oficina ? oficina.nome : (p.oficinaId || '-'),
-          };
-        });
-
+        setAlunos(alunosRes.data);
+        setOficinas(oficinasRes.data);
+        setPresencas(presencasRes.data);
         setStats({
-          students: alunos.length,
-          workshops: oficinas.length,
-          attendanceRecords: presencas.length,
-          recentAttendance
+          students: alunosRes.data.length,
+          workshops: oficinasRes.data.length,
+          attendanceRecords: presencasRes.data.length,
         });
       } catch (error) {
-        setStats({ students: 0, workshops: 0, attendanceRecords: 0, recentAttendance: [] });
+        setStats({ students: 0, workshops: 0, attendanceRecords: 0 });
       } finally {
         setLoading(false);
       }
@@ -57,14 +48,106 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
+  // Agrupar presenças por oficinaId + data
+  const oficinasPorData = (() => {
+    // { 'oficinaId|data': { oficinaId, data, nome, local, count } }
+    const map = {};
+    presencas.forEach(p => {
+      const key = `${p.oficinaId}|${p.data}`;
+      if (!map[key]) {
+        const oficina = oficinas.find(o => o.id === p.oficinaId);
+        map[key] = {
+          oficinaId: p.oficinaId,
+          data: p.data,
+          nome: oficina ? oficina.nome : '-',
+          local: oficina ? oficina.local : '-',
+          count: 0,
+        };
+      }
+      map[key].count++;
+    });
+    // Ordenar por data decrescente
+    return Object.values(map).sort((a, b) => new Date(b.data) - new Date(a.data));
+  })();
+
+  // Modal de edição de presenças
+  const openPresencasModal = (oficinaId, data) => {
+    setEdicao({ oficinaId, data });
+    // Buscar presenças já registradas para esta oficina e data
+    const presencasDaOficina = presencas.filter(p => p.oficinaId === oficinaId && p.data === data);
+    // Mapear presenças por alunoId
+    const presencasMap = {};
+    presencasDaOficina.forEach(p => {
+      presencasMap[p.alunoId] = p.presente;
+    });
+    setPresencasOficina(presencasMap);
+    setModalOpen(true);
+  };
+
+  const alunosDaOficina = edicao
+    ? alunos.filter(aluno => (aluno.oficinas || []).includes(edicao.oficinaId))
+    : [];
+
+  const handlePresencaChange = (alunoId) => {
+    setPresencasOficina(prev => ({ ...prev, [alunoId]: !prev[alunoId] }));
+  };
+
+  const handleSalvarPresencas = async () => {
+    if (!edicao) return;
+    setSaving(true);
+    try {
+      // Para cada aluno da oficina, criar ou atualizar presença
+      await Promise.all(alunosDaOficina.map(async (aluno) => {
+        const jaRegistrada = presencas.find(p => p.oficinaId === edicao.oficinaId && p.data === edicao.data && p.alunoId === aluno.id);
+        if (presencasOficina[aluno.id]) {
+          // Se já existe, atualizar para presente: true
+          if (jaRegistrada) {
+            await axios.put(`${API_PRESENCAS_URL}/${jaRegistrada.id}`, {
+              ...jaRegistrada,
+              presente: true,
+            });
+          } else {
+            // Se não existe, criar
+            await axios.post(API_PRESENCAS_URL, {
+              alunoId: aluno.id,
+              data: edicao.data,
+              presente: true,
+              turma: aluno.turma,
+              oficinaId: edicao.oficinaId,
+            });
+          }
+        } else {
+          // Se desmarcou, atualizar para presente: false se já existe
+          if (jaRegistrada && jaRegistrada.presente) {
+            await axios.put(`${API_PRESENCAS_URL}/${jaRegistrada.id}`, {
+              ...jaRegistrada,
+              presente: false,
+            });
+          }
+        }
+      }));
+      setModalOpen(false);
+      // Atualizar presenças no estado
+      const presencasRes = await axios.get(API_PRESENCAS_URL);
+      setPresencas(presencasRes.data);
+    } catch (error) {
+      alert('Erro ao salvar presenças');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Corrigir timezone: garantir que a data exibida é a correta (sem subtrair 1 dia)
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    // Forçar UTC para evitar problemas de timezone
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
   if (loading) {
     return <div className="loading">Carregando...</div>;
   }
-
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-    return new Date(dateString).toLocaleDateString('pt-BR', options);
-  };
 
   return (
     <div className="dashboard-container">
@@ -97,32 +180,91 @@ const Dashboard = () => {
       </div>
 
       <div className="recent-activity">
-        <h2>Presenças Recentes</h2>
-        {stats.recentAttendance.length > 0 ? (
+        <h2>Oficinas Realizadas</h2>
+        {oficinasPorData.length > 0 ? (
           <div className="table-container">
             <table>
               <thead>
                 <tr>
                   <th>Data</th>
-                  <th>Aluno</th>
-                  <th>Oficina</th>
+                  <th>Nome</th>
+                  <th>Local</th>
+                  <th>Presenças Registradas</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {stats.recentAttendance.map((record) => (
-                  <tr key={record.id}>
-                    <td>{formatDate(record.date)}</td>
-                    <td>{record.studentName}</td>
-                    <td>{record.workshopName}</td>
+                {oficinasPorData.map((item) => (
+                  <tr key={item.oficinaId + '|' + item.data}>
+                    <td>{formatDate(item.data)}</td>
+                    <td>{item.nome}</td>
+                    <td>{item.local}</td>
+                    <td>{item.count}</td>
+                    <td>
+                      <button className="btn-icon edit" onClick={() => openPresencasModal(item.oficinaId, item.data)} title="Editar presenças">
+                        <FaEdit />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p>Nenhuma presença registrada ainda.</p>
+          <p>Nenhuma oficina realizada ainda.</p>
         )}
       </div>
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={edicao ? `Editar Presenças - ${edicao.data}` : 'Editar Presenças'}
+      >
+        {edicao && (
+          <form onSubmit={e => { e.preventDefault(); handleSalvarPresencas(); }}>
+            <div className="form-group">
+              <label>Data</label>
+              <input type="text" value={formatDate(edicao.data)} disabled />
+            </div>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Presente</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Turma</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {alunosDaOficina.map(aluno => (
+                    <tr key={aluno.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={!!presencasOficina[aluno.id]}
+                          onChange={() => handlePresencaChange(aluno.id)}
+                        />
+                      </td>
+                      <td>{aluno.nome}</td>
+                      <td>{aluno.email}</td>
+                      <td>{aluno.turma}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="secondary" onClick={() => setModalOpen(false)}>
+                Cancelar
+              </button>
+              <button type="submit" className="success" disabled={saving}>
+                {saving ? 'Salvando...' : 'Salvar Presenças'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 };
