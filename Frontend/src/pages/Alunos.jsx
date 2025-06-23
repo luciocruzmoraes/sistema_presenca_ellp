@@ -4,7 +4,6 @@ import axios from 'axios';
 import Modal from '../components/Modal/Modal';
 import { FaSearch, FaPlus, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 
-// OBS: A página Oficinas.jsx foi criada seguindo o padrão desta página para adicionar, editar, buscar e deletar oficinas.
 
 const API_URL = 'http://localhost:3000/api/alunos'; 
 const API_OFICINAS_URL = 'http://localhost:3000/api/oficinas';
