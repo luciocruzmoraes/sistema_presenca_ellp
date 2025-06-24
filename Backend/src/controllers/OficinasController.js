@@ -2,11 +2,12 @@ const oficinaService = require('../services/OficinaService');
 
 const createOficina = async (req, res) => {
   try {
-    const { nome, descricao, data, local } = req.body;
-    if (!nome || !descricao || !data || !local) {
-      return res.status(400).json({ error: 'Campos nome, descricao, data e local são obrigatórios' });
+    console.log('REQ BODY', req.body); // Log para depuração
+    const { nome, descricao, local } = req.body;
+    if (!nome || !descricao || !local) {
+      return res.status(400).json({ error: 'Campos nome, descricao e local são obrigatórios' });
     }
-    const oficina = await oficinaService.createOficina({ nome, descricao, data, local });
+    const oficina = await oficinaService.createOficina({ nome, descricao, local });
     res.status(201).json(oficina);
   } catch (error) {
     console.error('Erro ao criar oficina:', error);
@@ -38,12 +39,11 @@ const getOficinaById = async (req, res) => {
   }
 };
 
-
 const updateOficina = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, descricao, data, local } = req.body;
-    const oficinaAtualizada = await oficinaService.updateOficina(id, { nome, descricao, data, local });
+    const { nome, descricao, local } = req.body;
+    const oficinaAtualizada = await oficinaService.updateOficina(id, { nome, descricao, local });
     if (!oficinaAtualizada) {
       return res.status(404).json({ error: 'Oficina não encontrada' });
     }

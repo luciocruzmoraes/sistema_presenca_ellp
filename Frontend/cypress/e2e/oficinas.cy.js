@@ -1,8 +1,8 @@
 describe('Gestão de Oficinas', () => {
   beforeEach(() => {
-    cy.intercept('POST', 'http://localhost:3000/api/oficinas').as('postOficina');
-    cy.intercept('GET', 'http://localhost:3000/api/oficinas').as('getOficinas');
-    cy.intercept('GET', 'http://localhost:3000/api/alunos').as('getAlunos');
+    cy.intercept('POST', '/api/oficinas').as('postOficina');
+    cy.intercept('GET', '/api/oficinas').as('getOficinas');
+    cy.intercept('GET', '/api/alunos').as('getAlunos');
 
     cy.visit('http://localhost:5173/workshops');
 
@@ -29,7 +29,7 @@ describe('Gestão de Oficinas', () => {
     cy.get('textarea[name="descricao"]').type('Descrição de teste');
     cy.get('input[name="local"]').type('Sala 1');
 
-    cy.contains('Adicionar').click();
+    cy.get('button[type=submit]').click();
 
     cy.wait('@postOficina').its('response.statusCode').should('eq', 201); // ou 200, conforme seu back
     cy.wait('@getOficinas');
